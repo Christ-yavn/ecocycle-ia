@@ -1,0 +1,25 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.2.2
+torchvision==0.17.2
+
+fastapi==0.110.0
+uvicorn==0.27.1
+pydantic==2.6.3
+pydantic-settings==2.2.1
+python-multipart==0.0.9
+scikit-learn==1.4.1.post1
+prophet==1.1.5
+xgboost==2.0.3
+pandas==2.2.1
+numpy==1.26.4
+Pillow==10.2.0
+PyJWT==2.8.0
+PyYAML==6.0.1
+
+ultralytics==8.1.0
+opencv-python-headless==4.9.0.80
+
+# TensorFlow (2.15.0) n'est requis QUE pour l'entrainement du classificateur
+# MobileNetV2 (V1). Le runtime utilise YOLO (torch, CPU).
+# Pour (re)entrainer en local : pip install tensorflow==2.15.0

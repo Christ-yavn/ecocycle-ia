@@ -1,0 +1,37 @@
+# =============================================================
+# EcoLoop AI - Configuration Docker Compose
+# =============================================================
+# Démarrage : docker-compose up -d
+# Arrêt :     docker-compose down
+# Logs :      docker-compose logs -f ecoloop-ai
+# =============================================================
+
+version: '3.8'
+
+services:
+  ecoloop-ai:
+    # Nom du conteneur
+    container_name: ecoloop-ai
+    # Construction à partir du Dockerfile local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapping des ports (hôte:conteneur)
+    ports:
+      - "8000:8000"
+    # Variables d'environnement depuis le fichier .env
+    env_file:
+      - .env
+    # Volumes persistants pour les modèles et les données
+    volumes:
+      - ./saved_models:/app/saved_models
+      - ./data:/app/data
+    # Vérification de santé du service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Politique de redémarrage
+    restart: unless-stopped

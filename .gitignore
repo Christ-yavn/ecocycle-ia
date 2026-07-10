@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environnement
+.env
+.env.*
+!.env.example
+
+# Données & modèles (trop lourds pour git)
+saved_models/*.pt
+saved_models/*.h5
+saved_models/*.tflite
+saved_models/*.pkl
+data/
+!saved_models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

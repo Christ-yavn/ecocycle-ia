@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ecocycle-ia
+    runtime: python
+    region: frankfurt
+    plan: free
+    rootDir: ia
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.ai_server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: PORT
+        sync: false
+      - key: ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://ecocycle-ci.vercel.app,https://*.vercel.app
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: MODEL_PATH
+        value: saved_models
