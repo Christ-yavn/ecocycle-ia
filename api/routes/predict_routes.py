@@ -121,8 +121,8 @@ class VolumePredictionResponse(BaseModel):
     date: str = Field(..., description="Date cible de la prédiction")
     predicted_volume: float = Field(..., description="Volume prédit en mètres cubes (m³)")
     unite: str = Field(default="m³", description="Unité du volume prédit")
-    confiance: Optional[float] = Field(
-        None, description="Score de confiance de la prédiction"
+    confiance: Optional[str] = Field(
+        None, description="Niveau de confiance de la prédiction (haute, moyenne, basse)"
     )
     timestamp: str = Field(..., description="Horodatage de la prédiction")
 
@@ -295,7 +295,7 @@ async def predict_volume(request: VolumeRequest):
             date=request.date
         )
 
-        predicted_volume = result.get("predicted_volume", 0.0)
+        predicted_volume = result.get("predicted_volume_kg", 0.0)
         confiance = result.get("confidence", None)
 
         logger.info(

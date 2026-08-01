@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from PIL import Image
 
@@ -215,6 +216,10 @@ async def classify_image(
         raise HTTPException(status_code=400, detail="Veuillez envoyer une image valide.")
 
     try:
+        # Vérification précoce de la taille (avant chargement en mémoire)
+        if file.size is not None and file.size > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="Fichier trop volumineux.")
+
         contents = await file.read()
         file_size = len(contents)
 
@@ -228,8 +233,8 @@ async def classify_image(
         # YOLO lit directement l'image binaire via PIL
         image = Image.open(io.BytesIO(contents))
 
-        # --- Classification YOLO ---
-        result = classifier.predict(image)
+        # --- Classification YOLO (exécutée dans un thread pool pour ne pas bloquer l'event loop) ---
+        result = await run_in_threadpool(classifier.predict, image)
 
         # --- Récupération des conseils de recyclage pour le type dominant ---
         type_dominant = result.get("type_dominant", "inconnu")
@@ -279,6 +284,10 @@ async def analyze_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Veuillez envoyer une image valide.")
 
     try:
+        # Vérification précoce de la taille (avant chargement en mémoire)
+        if file.size is not None and file.size > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="Fichier trop volumineux.")
+
         contents = await file.read()
         file_size = len(contents)
 
@@ -290,7 +299,7 @@ async def analyze_image(file: UploadFile = File(...)):
             raise HTTPException(status_code=503, detail="Modèle non disponible.")
 
         image = Image.open(io.BytesIO(contents))
-        result = classifier.analyze(image)
+        result = await run_in_threadpool(classifier.analyze, image)
 
         type_dominant = result.get("type_dominant", "inconnu")
         tips = _tips_safe(type_dominant)

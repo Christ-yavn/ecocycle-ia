@@ -30,6 +30,7 @@ from tensorflow.keras.callbacks import (
     ReduceLROnPlateau
 )
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 # Ajouter le répertoire parent au path pour les imports locaux
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

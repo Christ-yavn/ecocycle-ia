@@ -182,9 +182,9 @@ async def startup_event():
     logger.info("Initialisation terminée")
 
 
-app.include_router(classify_router)
-app.include_router(predict_router)
-app.include_router(fraud_router)
+app.include_router(classify_router, dependencies=[Depends(verify_token)])
+app.include_router(predict_router, dependencies=[Depends(verify_token)])
+app.include_router(fraud_router, dependencies=[Depends(verify_token)])
 
 
 @app.get(
