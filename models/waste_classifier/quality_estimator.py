@@ -28,6 +28,8 @@ from models.waste_classifier.abidjan_classes import (
 def estimer_poids(items: list[dict]) -> dict[str, float]:
     """
     Estime le poids total par catégorie en kg à partir des items détectés.
+    Utilise l'aire de la bounding box (box_xywh) pour estimer le volume d'un tas,
+    car un simple comptage sous-estime massivement les sacs ou les piles de déchets.
 
     Args :
         items : liste de dicts au format YOLO (`type`, `confidence`, `box_xywh`)
@@ -35,11 +37,23 @@ def estimer_poids(items: list[dict]) -> dict[str, float]:
     Returns :
         dict {categorie: poids_kg}
     """
-    compte: dict[str, int] = {}
+    res: dict[str, float] = {}
     for it in items:
         cat = it.get("type") or it.get("classe_brute") or "residuel"
-        compte[cat] = compte.get(cat, 0) + 1
-    return {cat: round(n * poids_moyen(cat), 2) for cat, n in compte.items()}
+        
+        # Récupération de l'aire relative (les images sont redimensionnées à 640x640 par YOLO)
+        box = it.get("box_xywh", [0, 0, 0, 0])
+        w, h = box[2], box[3]
+        area_ratio = (w * h) / (640.0 * 640.0) if (w * h) > 0 else 0.01
+        
+        # Si le déchet occupe tout l'écran, on estime que c'est un gros sac/tas (ex: 35 kg max)
+        # On prend le max entre le poids unitaire standard et le poids volumétrique estimé
+        poids_volumetrique = area_ratio * 35.0
+        poids_item = max(poids_moyen(cat), poids_volumetrique)
+        
+        res[cat] = res.get(cat, 0.0) + poids_item
+        
+    return {k: round(v, 2) for k, v in res.items()}
 
 
 def evaluer_etat(items: list[dict], resume_quantite: dict) -> str:
