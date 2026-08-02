@@ -1,19 +1,24 @@
 # Utiliser une image Python officielle légère
 FROM python:3.12-slim
 
-# Définir le répertoire de travail dans le conteneur
-WORKDIR /app
+# Définir l'utilisateur non-root requis par Hugging Face Spaces (UID 1000)
+RUN useradd -m -u 1000 user
+USER user
 
 # Définir les variables d'environnement
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONIOENCODING=utf-8
-# Dossiers de config inscriptibles (YOLO/Ultralytics et Matplotlib)
-ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
-ENV MPLCONFIGDIR=/tmp/matplotlib
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8 \
+    YOLO_CONFIG_DIR=/tmp/Ultralytics \
+    MPLCONFIGDIR=/tmp/matplotlib
 
-# Installer les dépendances système nécessaires pour Prophet et OpenCV/Pillow
-# (Debian 13 "trixie" : libgl1-mesa-glx -> libgl1)
+# Définir le répertoire de travail
+WORKDIR $HOME/app
+
+# Revenir en root temporairement pour installer les paquets système
+USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -21,10 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copier le fichier des dépendances
-COPY requirements.txt .
+# Repasser sur l'utilisateur non-root
+USER user
 
-# Installer PyTorch en version CPU uniquement (évite les lourds wheels CUDA)
+# Copier le fichier des dépendances avec les bons droits
+COPY --chown=user requirements.txt .
+
+# Installer PyTorch en version CPU uniquement
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
         torch==2.2.2 torchvision==0.17.2 \
@@ -34,10 +42,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copier le reste du code source
-COPY . .
+COPY --chown=user . .
 
-# Exposer le port de l'API
-EXPOSE 8000
+# Exposer le port de l'API (Hugging Face utilise 7860 par défaut)
+EXPOSE 7860
 
 # Commande pour démarrer le serveur
-CMD uvicorn api.ai_server:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD uvicorn api.ai_server:app --host 0.0.0.0 --port 7860
